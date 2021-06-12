@@ -1,6 +1,6 @@
 # Nimpack - App packager
 
-![](https://img.shields.io/badge/status-unstable-lightgray)
+![](https://img.shields.io/badge/status-incomplete-lightgray)
 
 This tool packages your GUI Nim application as a single portable executable on all platforms.
 

@@ -75,7 +75,7 @@ proc buildWeb(appInfo: Table[string, string]): string =
     # Replace vars
     var finalWrapper = wrapperFile
     finalWrapper = finalWrapper.replace("REPLACE_APP_TITLE", appInfo["name"])
-    finalWrapper = finalWrapper.replace("REPLACE_APP_CODE", readFile(outputFile))
+    finalWrapper = finalWrapper.replace("<!-- Inject: App code -->", "<script>" & readFile(outputFile) & "</script>")
 
     # Delete output file
     removeFile(outputFile)
