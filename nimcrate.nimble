@@ -5,10 +5,12 @@ description   = "Package your Nim app for different platforms"
 license       = "MIT"
 srcDir        = "src"
 installExt    = @["nim", "html"]
-bin           = @["nimpack"]
+bin           = @["nimcrate"]
 
 # Dependencies
 requires "nim >= 1.4.0"
-requires "classes >= 0.2.0"
-requires "docopt"
-requires "elvis"
+
+# Test task
+task test, "Test":
+    exec "nimble install -y"
+    exec "nimcrate examples/alert.nim"

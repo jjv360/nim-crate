@@ -1,10 +1,11 @@
-##
-## Name: Console Log
-## Version: 0.1.0
-## Console: yes
-##
-## This simple app just logs a message to the console. To build: `nimpack examples/log.nim`
-##
+import nimcrate
+crate:
+    id = "jjv360.nimcrate.console-log"
+    name = "Console Log Example"
+    description = "This simple app just logs a message to the console. To build: `nimcrate examples/log.nim`"
 
 
-echo "Hello world from the console!"
+# App code
+import std/strformat
+import std/tables
+echo fmt"""Hello world from {NimCrateInfo["name"]} version {NimCrateInfo["version"]}!"""
