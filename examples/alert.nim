@@ -4,6 +4,7 @@ crate:
     name = "Alert Example"
     description = "This app shows an alert box and then exits. To build: `nimcrate examples/alert.nim`"
     target "windows"
+    target "macosx"
     target "web"
     target "web:dev":
         name = "Alert Example (dev)"
@@ -22,6 +23,12 @@ elif defined(windows):
     # Show alert on Windows
     import winim/lean
     MessageBox(0, message, "Hello World!", MB_OK or MB_ICONINFORMATION)
+
+elif defined(macosx):
+
+    # Show alert on Mac OS X
+    import ./utils/corefoundation
+    discard CFUserNotificationDisplayAlert(alertHeader = "Hello World!", alertMessage = message)
 
 else:
 

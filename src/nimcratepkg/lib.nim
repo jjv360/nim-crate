@@ -92,7 +92,8 @@ template crateDefineEnd*() =
     # Stop compiling if we're only wanting the crate output
     when defined(NimCrateInformationExport):
         static:
-            raiseAssert("===NimCrateConfigComplete===")
+            echo("===NimCrateConfigComplete===")
+            quit(0)
 
 
 ## Utility function to get a field from the Crate info

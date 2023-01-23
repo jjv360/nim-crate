@@ -2,18 +2,19 @@
 
 ![](https://img.shields.io/badge/status-incomplete-lightgray)
 
-This tool packages your Nim GUI application for multiple platforms, handling cross-compilation automatically.
+This tool packages your Nim GUI application for multiple platforms, handling cross-compilation automatically. 
+It takes your Nim binary and app resources and bundles them into "crates". For example, an `.app` for Mac, `.ipa` for iOS, `.apk` for Andorid, etc.
 
 ## Usage
 
 1. Install with `nimble install https://github.com/jjv360/crate`
-2. Add Crate details to your source (see below)
-3. Run `nimcrate myapp.nim` to build your app
+2. Add Crate details to your source (optional)
+3. Run `nimcrate myapp.nim` to build your app for each platform
 4. Output is saved to the `dist/` folder.
 
 ## Specifying Crate information
 
-To convert your Nim code into a Crate which can be built for multiple platforms, you need to specify the crate information in your Nim source code. This can be done by adding the `crate:` section to the top of your main Nim file. Example:
+You can define extra Crate information by adding the `crate:` section to the top of your main Nim file. Example:
 
 ```
 import nimcrate
@@ -22,4 +23,4 @@ crate:
     name = "My App"
 ```
 
-All Crate fields are optional, but you should specify `id` at least. See [the docs](./Documentation.md) for all available fields.
+See [the docs](./Documentation.md) for all available fields.

@@ -1,5 +1,4 @@
 import std/os
-import std/osproc
 import std/strutils
 import std/parseopt
 import std/tables
@@ -7,36 +6,18 @@ import std/terminal
 import std/tempfiles
 import std/exitprocs
 import std/json
-import ./platform_windows
-import ./platform_web
+import std/re
+import ./platforms/platform_base
+import ./platforms/platform_windows
+import ./platforms/platform_web
+import ./platforms/platform_macosx
 
-# Execute process and return the exit code
-proc run(args: varargs[string]): tuple[output: string, exitCode: int] =
-    let cmd = args.quoteShellCommand()
-    # echo "Run: " & cmd
-    return execCmdEx(cmd, { poStdErrToStdOut })
-
-
-
-## Build a specific target
-proc buildTarget(target: string, config: Table[string, string]) =
-
-    # Get platform ID
-    var platformID = target
-    let idx = platformID.find(":")
-    if idx >= 0:
-        platformID = platformID.substr(0, idx-1)
-
-    # Start building
-    stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Building target: ", target)
-
-    # Build for the associated platform
-    if platformID == "windows": 
-        buildWindows(target, config)
-    elif platformID == "web": 
-        buildWeb(target, config)
-    else: 
-        stdout.styledWriteLine(fgYellow, "  ! ", fgDefault, "Skipping due to unknown platform: " & platformID)
+# Create list of active platforms
+let platforms = @[
+    PlatformMac.init(),
+    PlatformWeb.init(),
+    PlatformWindows.init(),
+]
 
 
 ## Get package version from .nimble file
@@ -46,7 +27,7 @@ proc getNimbleVersion(): string =
     try:
 
         # Get it
-        let result2 = run("nimble", "dump", "--json")
+        let result2 = runWithExitCode("nimble", "dump", "--json")
         let json = parseJson(result2.output)
         return json["version"].getStr()
 
@@ -79,6 +60,7 @@ proc run2() =
                     raiseAssert("Only one source file should be specified.")
 
     # Check input
+    let outDir = absolutePath(options.getOrDefault("outDir", "dist"))
     var showHelp = false
     if filename.len == 0: showHelp = true
     if filename.len > 0 and not fileExists(filename): raiseAssert("File not found: " & filename)
@@ -90,12 +72,11 @@ proc run2() =
 
     # Fetch crate information from the source file
     if not options.contains("outputConfig"): stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Fetching crate information...")
-    let result = run("nim", "compile", "--define:NimCrateInformationExport", absolutePath(filename))
+    let result = runWithExitCode("nim", "r", "--define:NimCrateInformationExport", absolutePath(filename))
     var targets: seq[string]
     var config: Table[string, string]
     var currentTarget = ""
     var currentKey = ""
-    var exitedProperly = false
     for line in result.output.splitLines():
         
         # Check line
@@ -120,15 +101,9 @@ proc run2() =
             let key = (if currentTarget.len == 0: "" else: currentTarget & "+") & currentKey
             config[key] = item
 
-        elif line.contains("===NimCrateConfigComplete==="):
-
-            # Config complete
-            exitedProperly = true
-            break
-
 
     # Stop if config was not generated properly
-    if not exitedProperly:
+    if result.exitCode != 0:
         echo result.output
         echo ""
         stdout.styledWriteLine(fgRed, "x ", fgDefault, "Unable to fetch crate information.")
@@ -138,40 +113,95 @@ proc run2() =
     
     # Add default config options
     config["nimcrateVersion"] = "1"
+    config["outDir"] = outDir
+    config["sourcefile"] = absolutePath(filename)
+    config["debug"] = options.getOrDefault("debug")
 
+    # If no ID specified, use the input file name
+    if config.getOrDefault("id", "") == "":
+        var n = extractFilename(filename)
+        if n.endsWith(".nim"): n = n.substr(0, n.len - 5)
+        n = n.replace(re"[^0-9A-Za-z\.]", "_").toLower()
+        config["id"] = "org.nimcrate." & n
+
+    # If no name specified, use the input file name
+    if config.getOrDefault("name", "") == "":
+        var n = extractFilename(filename)
+        if n.endsWith(".nim"): n = n.substr(0, n.len - 5)
+        n = n.replace(re"[^0-9A-Za-z\.\(\) ]", " ").strip()
+        config["name"] = n
 
     # If no version number specified, try get it from the .nimble package
     if config.getOrDefault("version", "") == "":
         config["version"] = getNimbleVersion()
-
-
 
     # If they just want the config output, do that and exit
     if options.contains("outputConfig"):
         for key, value in config.pairs: echo key & "=" & value
         quit(0)
 
-
     # Create a temporary directory for building the app, and delete it on exit
     let tempFolder = createTempDir("nimcrate", "build")
     addExitProc(proc() =
         removeDir(tempFolder)
     )
-
     
     # Add extra config options
-    config["sourcefile"] = absolutePath(filename)
     config["temp"] = tempFolder
-
 
     # If no targets specified, add all of the known ones
     if targets.len == 0:
-        targets = @["windows", "mac", "linux", "web"]
+        targets = @["windows", "macosx", "linux", "web"]
 
+    # If they specified a specific target on the command line, build that one only
+    if options.getOrDefault("target", "") != "":
+        targets = @[ options["target"] ]
 
     # Build all platforms
-    for target in targets:
-        buildTarget(target, config)
+    for targetID in targets:
+
+        # Start building this target
+        stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Building target: ", targetID)
+
+        # Catch errors
+        try:
+
+            # Get platform ID
+            var platformID = targetID
+            let idx = platformID.find(":")
+            if idx >= 0:
+                platformID = platformID.substr(0, idx-1)
+
+            # Find platform class
+            var platform: Platform = nil
+            for p in platforms:
+                if p.id == platformID:
+                    platform = p
+                    break
+
+            # Stop if not found
+            if platform == nil:
+                raiseAssert("Platform '" & platformID & "' not supported.")
+            
+            # Build and get output
+            let buildInfo = platform.build(targetID, config)
+
+            # Get output file name
+            var outName = targetID.replace(re"[^0-9a-zA-Z]", "-")
+            if buildInfo.fileExtension != "":
+                outName = outName & "." & buildInfo.fileExtension
+
+            # Move to output directory
+            createDir(config["outDir"])
+            if dirExists(buildInfo.filePath):
+                moveDir(buildInfo.filePath, config["outDir"] / outName)
+            else:
+                moveFile(buildInfo.filePath, config["outDir"] / outName)
+
+        except Exception as err:
+
+            # Build failed
+            stdout.styledWriteLine(fgRed, "  x ", fgDefault, "Build failed: ", err.msg)
 
 
 # Entry point with error handling

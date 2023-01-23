@@ -1,3 +1,4 @@
 dist/
 *.exe
 /nimcrate
+.DS_Store
