@@ -21,20 +21,44 @@ class PlatformWindows of Platform:
     ## Return true if we can run on this platform
     method canRunApp(): bool = 
         
-        # Only on Windows
-        # TODO: Use Wine or CrossOver?
+        # Check platform
         when defined(windows): 
+
+            # We can run it directly
             return true 
+
+        elif defined(macosx):
+
+            # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
+            return true
+
         else: 
+
+            # Unknown platform
             return false
 
 
     ## Run the built app on this platform if possible
     method runApp(output: BuildOutput) =
 
-        # Run it
-        runAndPipeOutput output.filePath
+        # Check platform
+        when defined(windows): 
 
+            # We can run it directly
+            runAndPipeOutput output.filePath
+
+        elif defined(macosx):
+
+            # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
+            runAndPipeOutput "open", 
+                "-W",                   # <-- Wait for the app to exit
+                output.filePath
+
+        else: 
+
+            # Unknown platform
+            return false
+        
 
     ## Build
     method build(build: BuildConfig): BuildOutput =
