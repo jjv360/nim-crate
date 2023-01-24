@@ -37,8 +37,6 @@ Options:
     --outputConfig      Skip build and only output the configuration info for this Crate.
     --run               Runs the app after building. Can be used with --target where possible.
     --target:?          Specify which target to build. By default builds all targets.
-    --macNoLS           If specified along with --run, will run directly instead of via
-                        LaunchServices.
 
 Targets:
 

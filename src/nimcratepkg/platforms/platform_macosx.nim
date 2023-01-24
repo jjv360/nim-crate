@@ -28,19 +28,7 @@ class PlatformMac of Platform:
 
     ## Run the built app on this platform if possible
     method runApp(output: BuildOutput) =
-
-        # Check how to run
-        if output.build.cliOptions.hasKey("macNoLS"):
-
-            # Run it directly
-            runAndPipeOutput output.filePath / "Contents" / "MacOS" / "nimApp"
-
-        else:
-
-            # Run it via LaunchServices
-            runAndPipeOutput "open", 
-                "-a", output.filePath,
-                "-W"                        # <-- Wait for app to finish
+        runAndPipeOutput output.filePath / "Contents" / "MacOS" / "nimApp"
 
 
     ## Build
