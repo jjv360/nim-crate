@@ -11,14 +11,14 @@ import ./platforms/platform_base
 import ./platforms/platform_windows
 import ./platforms/platform_web
 import ./platforms/platform_macosx
-import ./platforms/platform_ios
+# import ./platforms/platform_ios
 
 # Create list of active platforms
 # Note: The order is imoprtant, since it will be used to determine which binary to run if --run is specified
 let platforms = @[
     PlatformMac.init(),
     PlatformWindows.init(),
-    PlatformiOS.init(),
+    # PlatformiOS.init(),
     PlatformWeb.init(),
 ]
 
