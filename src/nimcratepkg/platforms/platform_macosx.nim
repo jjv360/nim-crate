@@ -47,7 +47,7 @@ class PlatformMac of Platform:
         createDir(stagingDir)
         
         # Compile for x64
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for Intel")
+        stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Building app for Intel")
         run "nim", "compile",
 
             # Crate flags
@@ -55,6 +55,7 @@ class PlatformMac of Platform:
             "--define:NimCrateMacOSX",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
+            "--define:NimCrateID=" & config["id"],
             "--out:" & stagingDir / "app-amd64",
 
             # Architecture and platform flags
@@ -62,7 +63,7 @@ class PlatformMac of Platform:
             "--cpu:amd64",
             "--app:gui",
             "--threads:on",
-            "--define:release",
+            if config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
             "--passC:-target x86_64-apple-macos10.12",
@@ -75,7 +76,7 @@ class PlatformMac of Platform:
             config["sourcefile"]
         
         # Compile for arm64 (M1 Macs)
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for M1")
+        stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Building app for M1")
         run "nim", "compile",
 
             # Crate flags
@@ -83,6 +84,7 @@ class PlatformMac of Platform:
             "--define:NimCrateMacOSX",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
+            "--define:NimCrateID=" & config["id"],
             "--out:" & stagingDir / "app-arm64",
 
             # Architecture and platform flags

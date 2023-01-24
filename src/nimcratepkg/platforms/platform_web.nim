@@ -99,10 +99,11 @@ class PlatformWeb of Platform:
             "--define:NimCrateVersion=" & config["version"],
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateWeb",
+            "--define:NimCrateID=" & config["id"],
             "--out:" & jsPath,
 
             # Architecture and platform flags
-            "--define:release",
+            if config["debug"] == "": "--define:release" else: "--define:debug",
             
             # Source file path
             config["sourcefile"]

@@ -5,8 +5,9 @@ import std/tables
 import std/strutils
 
 ## Crate info string, available after the crate: command has run
-const NimCrateTargetID* {.strdefine.} = ""
+const NimCrateID* {.strdefine.} = ""
 const NimCrateVersion* {.strdefine.} = ""
+const NimCrateTargetID* {.strdefine.} = ""
 var NimCrateInfo*: Table[string, string]
 
 
@@ -99,8 +100,9 @@ template crateDefineEnd*() =
 ## Utility function to get a field from the Crate info
 proc crateField*(key: string): string =
 
-    # Special cases
-    if key == "version": return NimCrateVersion     # <-- The version can be dynamically generated
+    # Special cases for defined vars
+    if key == "id": return NimCrateID
+    if key == "version": return NimCrateVersion
 
     # Return target-specific field, or the generic one if not found
     return NimCrateInfo.getOrDefault(

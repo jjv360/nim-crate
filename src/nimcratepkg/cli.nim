@@ -14,13 +14,47 @@ import ./platforms/platform_macosx
 # import ./platforms/platform_ios
 
 # Create list of active platforms
-# Note: The order is imoprtant, since it will be used to determine which binary to run if --run is specified
+# Note: The order is important, since it will be used to determine which binary to run if --run is specified
 let platforms = @[
     PlatformMac.init(),
     PlatformWindows.init(),
     # PlatformiOS.init(),
     PlatformWeb.init(),
 ]
+
+## Help text
+const helpText = """
+NimCrate - Package your Nim app for multiple platforms. 
+Usage:
+
+    nimcrate <nimfile> [options]
+
+Options:
+
+    <nimfile>           Path to your main Nim source file.
+    --debug             If specified, builds your source in debug mode.
+    --outDir:x          Specify where to save built apps. Defaults to "dist".
+    --outputConfig      Skip build and only output the configuration info for this Crate.
+    --run               Runs the app after building. Can be used with --target where possible.
+    --target:?          Specify which target to build. By default builds all targets.
+
+Targets:
+
+    macosx              Builds a Mac OS X application bundle. (requires running on Mac)
+    web                 Builds an HTML single-page application.
+    windows             Builds a Windows 64-bit EXE.
+
+    You can also specify target variants by appending :name to a target. For example you could have
+    windows:dev and windows:prod variants, and then customize your app based on the target.
+
+Nim defines:
+
+    NimCrate            Always defined when building via this tool
+    NimCrateID          The ID of the crate being built
+    NimCrateTargetID    The name of the target being built
+    NimCrateVersion     The version string of your Crate
+
+"""
 
 
 ## Get package version from .nimble file
@@ -62,19 +96,18 @@ proc run2() =
                 else:
                     raiseAssert("Only one source file should be specified.")
 
-    # Check input
-    let outDir = absolutePath(options.getOrDefault("outDir", "dist"))
-    var showHelp = false
-    if filename.len == 0: showHelp = true
-    if filename.len > 0 and not fileExists(filename): raiseAssert("File not found: " & filename)
-
     # Show help if parameters are invalid
-    if showHelp:
-        echo "Usage: nimcrate myfile.nim"
+    if options.hasKey("help"):
+        echo helpText
         return
 
+    # Check input
+    let outDir = absolutePath(options.getOrDefault("outDir", "dist"))
+    if filename.len == 0: raiseAssert("No input file specified.")
+    if filename.len > 0 and not fileExists(filename): raiseAssert("File not found: " & filename)
+
     # Fetch crate information from the source file
-    if not options.contains("outputConfig"): stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Fetching crate information...")
+    if not options.contains("outputConfig"): stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Fetching crate information...")
     let result = runWithExitCode("nim", "r", "--define:NimCrateInformationExport", absolutePath(filename))
     var targets: seq[string]
     var config: Table[string, string]
@@ -109,7 +142,7 @@ proc run2() =
     if result.exitCode != 0:
         echo result.output
         echo ""
-        stdout.styledWriteLine(fgRed, "x ", fgDefault, "Unable to fetch crate information.")
+        stdout.styledWriteLine(fgRed, "x ", resetStyle, "Unable to fetch crate information.")
         echo ""
         quit(1)
 
@@ -175,7 +208,7 @@ proc run2() =
     for targetID in targets:
 
         # Start building this target
-        stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Building target: ", targetID)
+        stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Building target: ", targetID)
 
         # Catch errors
         try:
@@ -222,7 +255,7 @@ proc run2() =
 
             # If --run is specified, run the app
             if options.hasKey("run"):
-                stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Launching app...")
+                stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Launching app...")
                 didRun = true
                 platform.runApp(outPath, config)
                 break
@@ -230,11 +263,11 @@ proc run2() =
         except Exception as err:
 
             # Build failed
-            stdout.styledWriteLine(fgRed, "  x ", fgDefault, "Build failed: ", err.msg)
+            stdout.styledWriteLine(fgRed, "  x ", resetStyle, "Build failed: ", err.msg)
 
     # Show warning if no platform to run was built
     if options.hasKey("run") and not didRun:
-        stdout.styledWriteLine(fgYellow, "  ! ", fgDefault, "Unable to run app on this platform")
+        stdout.styledWriteLine(fgYellow, "  ! ", resetStyle, "Unable to run app on this platform")
         quit(2)
 
 
@@ -245,4 +278,4 @@ proc run*() =
     try:
         run2()
     except Exception as ex:
-        echo("Error: " & ex.msg)
+        stdout.styledWriteLine(fgRed, "Error: ", resetStyle, ex.msg)

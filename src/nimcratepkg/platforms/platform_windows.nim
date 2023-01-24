@@ -55,7 +55,7 @@ class PlatformWindows of Platform:
         # Check if MinGW is installed
         let mingwExe = findExe("x86_64-w64-mingw32-gcc")
         if mingwExe.len == 0:
-            stdout.styledWriteLine(fgYellow, "  ! ", fgDefault, "Skipping target '", targetID, "' due to missing MinGW installation. On Mac you can install it with 'brew install mingw'.")
+            stdout.styledWriteLine(fgYellow, "  ! ", resetStyle, "Skipping target '", targetID, "' due to missing MinGW installation. On Mac you can install it with 'brew install mingw'.")
             return
 
         # Create app manifest
@@ -110,6 +110,7 @@ class PlatformWindows of Platform:
             "--define:NimCrateWindows64",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
+            "--define:NimCrateID=" & config["id"],
             "--out:" & outputFilePath,
 
             # Architecture and platform flags
@@ -117,7 +118,7 @@ class PlatformWindows of Platform:
             "--os:windows",
             "--app:" & config.getOrDefault("mode", "gui"),
             "--threads:on",
-            "--define:release",
+            if config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Windows flags
             "--passL:" & resourceCompiledPath,              # <-- Include our compiled resource file

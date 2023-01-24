@@ -6,7 +6,11 @@ crate:
 
 
 # Check how to show
-let message = "Hello from " & crateField("name") & " version " & crateField("version")
+import std/strformat
+let id = crateField("id")
+let name = crateField("name")
+let version = crateField("version")
+let message = fmt"Hello from {name} ({id}) version {version}"
 when defined(js):
 
     # Show alert in the browser

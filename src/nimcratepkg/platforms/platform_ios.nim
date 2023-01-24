@@ -31,7 +31,7 @@ class PlatformiOS of Platform:
         createDir(stagingDir)
         
         # Compile for x64
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for x86_64 (Simulator)")
+        stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Building app for x86_64 (Simulator)")
         run "nim", "compile",
 
             # Crate flags
@@ -62,7 +62,7 @@ class PlatformiOS of Platform:
             config["sourcefile"]
         
         # Compile for arm64 (M1 Macs)
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for ARM64")
+        stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Building app for ARM64")
         run "nim", "compile",
 
             # Crate flags
@@ -70,6 +70,7 @@ class PlatformiOS of Platform:
             "--define:NimCrateiOS",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
+            "--define:NimCrateID=" & config["id"],
             "--out:" & stagingDir / "app-arm64",
 
             # Architecture and platform flags
@@ -78,7 +79,7 @@ class PlatformiOS of Platform:
             "--app:gui",
             "--threads:on",
             "--define:ios",
-            "--define:release",
+            if config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
             "--passC:-target arm64-apple-ios",

@@ -36,3 +36,8 @@ task test, "Test":
     echo ""
     echo "Testing crate..."
     exec "nimcrate examples/alert.nim"
+
+# Show help screen
+task testHelp, "Show the help text":
+    exec "nimble install -y"
+    exec "nimcrate --help"
