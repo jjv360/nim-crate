@@ -9,6 +9,8 @@ import std/strformat
 import classes
 import ./platform_base
 
+## CrossOver on Mac (wine) bin location
+const crossOverWine = "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine"
 
 ##
 ## Build for Windows
@@ -29,8 +31,8 @@ class PlatformWindows of Platform:
 
         elif defined(macosx):
 
-            # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
-            return true
+            # True if CrossOver is installed
+            return fileExists(crossOverWine)
 
         else: 
 
@@ -50,9 +52,7 @@ class PlatformWindows of Platform:
         elif defined(macosx):
 
             # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
-            runAndPipeOutput "open", 
-                "-W",                   # <-- Wait for the app to exit
-                output.filePath
+            runAndPipeOutput crossOverWine, output.filePath
 
         else: 
 
