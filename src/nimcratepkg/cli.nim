@@ -37,6 +37,8 @@ Options:
     --outputConfig      Skip build and only output the configuration info for this Crate.
     --run               Runs the app after building. Can be used with --target where possible.
     --target:?          Specify which target to build. By default builds all targets.
+    --macNoLS           If specified along with --run, will run directly instead of via
+                        LaunchServices.
 
 Targets:
 
@@ -233,13 +235,26 @@ proc run2() =
             # If --run is specified, only build if we can run on this platform
             if options.hasKey("run") and not platform.canRunApp():
                 continue
+
+            # Create build config
+            let buildInfo = BuildConfig.init()
+            buildInfo.config = config
+            buildInfo.cliOptions = options
+            buildInfo.targetID = targetID
             
             # Build and get output
-            let buildInfo = platform.build(targetID, config)
+            let outputInfo = platform.build(buildInfo)
+
+            # If --run is specified, run the app
+            if options.hasKey("run"):
+                stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Launching app...")
+                didRun = true
+                platform.runApp(outputInfo)
+                break
 
             # Get output file name
             var outName = (config["name"] & " (" & targetID & ")").replace(re"[:;'*?]", "-")
-            if buildInfo.fileExtension != "": outName = outName & "." & buildInfo.fileExtension
+            if outputInfo.fileExtension != "": outName = outName & "." & outputInfo.fileExtension
             let outPath = config["outDir"] / outName
 
             # Remove existing files
@@ -248,17 +263,10 @@ proc run2() =
             if fileExists(outPath): removeFile(outPath)
 
             # Move to output directory
-            if dirExists(buildInfo.filePath):
-                moveDir(buildInfo.filePath, outPath)
+            if dirExists(outputInfo.filePath):
+                moveDir(outputInfo.filePath, outPath)
             else:
-                moveFile(buildInfo.filePath, outPath)
-
-            # If --run is specified, run the app
-            if options.hasKey("run"):
-                stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Launching app...")
-                didRun = true
-                platform.runApp(outPath, config)
-                break
+                moveFile(outputInfo.filePath, outPath)
 
         except Exception as err:
 

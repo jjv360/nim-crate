@@ -30,14 +30,14 @@ class PlatformWindows of Platform:
 
 
     ## Run the built app on this platform if possible
-    method runApp(filePath: string, config: Table[string, string]) =
+    method runApp(output: BuildOutput) =
 
         # Run it
-        runAndPipeOutput filePath
+        runAndPipeOutput output.filePath
 
 
     ## Build
-    method build(targetID: string, config: Table[string, string]): BuildOutput =
+    method build(build: BuildConfig): BuildOutput =
 
         # Get binary names
         when defined(windows):
@@ -48,14 +48,14 @@ class PlatformWindows of Platform:
             const windres = "x86_64-w64-mingw32-windres"
 
         # Create staging directory
-        let stagingDir = config["temp"] / "windows"
+        let stagingDir = build.config["temp"] / "windows"
         if not dirExists(stagingDir):
             createDir(stagingDir)
 
         # Check if MinGW is installed
         let mingwExe = findExe("x86_64-w64-mingw32-gcc")
         if mingwExe.len == 0:
-            stdout.styledWriteLine(fgYellow, "  ! ", resetStyle, "Skipping target '", targetID, "' due to missing MinGW installation. On Mac you can install it with 'brew install mingw'.")
+            stdout.styledWriteLine(fgRed, "  x ", resetStyle, "Failed due to missing MinGW installation. On Mac you can install it with 'brew install mingw'.")
             return
 
         # Create app manifest
@@ -108,17 +108,17 @@ class PlatformWindows of Platform:
             "--define:NimCrate",
             "--define:NimCrateWindows",
             "--define:NimCrateWindows64",
-            "--define:NimCrateTargetID=" & targetID,
-            "--define:NimCrateVersion=" & config["version"],
-            "--define:NimCrateID=" & config["id"],
+            "--define:NimCrateTargetID=" & build.targetID,
+            "--define:NimCrateVersion=" & build.config["version"],
+            "--define:NimCrateID=" & build.config["id"],
             "--out:" & outputFilePath,
 
             # Architecture and platform flags
             "--cpu:amd64",
             "--os:windows",
-            "--app:" & config.getOrDefault("mode", "gui"),
+            "--app:" & build.config.getOrDefault("mode", "gui"),
             "--threads:on",
-            if config["debug"] == "": "--define:release" else: "--define:debug",
+            if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Windows flags
             "--passL:" & resourceCompiledPath,              # <-- Include our compiled resource file
@@ -129,7 +129,7 @@ class PlatformWindows of Platform:
             if mingw: "--gcc.linkerexe:x86_64-w64-mingw32-gcc" else: "-d:1",
             
             # Source file path
-            config["sourcefile"]
+            build.config["sourcefile"]
 
         # Done
-        return BuildOutput(filePath: outputFilePath, fileExtension: "exe")
+        return BuildOutput(build: build, filePath: outputFilePath, fileExtension: "exe")

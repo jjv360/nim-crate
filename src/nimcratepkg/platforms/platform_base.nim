@@ -5,6 +5,20 @@ import std/osproc
 
 
 ##
+## Build configuration
+class BuildConfig:
+
+    ## CLI launch flags
+    var cliOptions: Table[string, string]
+
+    ## Crate configuration
+    var config: Table[string, string]
+
+    ## Current target ID being built
+    var targetID = ""
+
+
+##
 ## Build output information
 class BuildOutput:
 
@@ -13,6 +27,9 @@ class BuildOutput:
 
     ## Application extension for this platform
     var fileExtension = ""
+
+    ## The build config used for the build
+    var build: BuildConfig
 
 
 ##
@@ -26,14 +43,14 @@ class Platform:
     method name(): string = ""
 
     ## Build for this platform
-    method build(targetID: string, config: Table[string, string]): BuildOutput =
+    method build(build: BuildConfig): BuildOutput =
         raiseAssert("Build for this platform is not supported.")
 
     ## Return true if we can run on this platform
     method canRunApp(): bool = false
 
     ## Run the built app on this platform if possible
-    method runApp(filePath: string, config: Table[string, string]) = discard
+    method runApp(output: BuildOutput) = discard
 
 
 ## Utility: Run a command and return the text output, and fail if the exit code is not zero

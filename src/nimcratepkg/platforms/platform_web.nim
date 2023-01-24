@@ -60,15 +60,15 @@ class PlatformWeb of Platform:
 
 
     ## Run the built app on this platform if possible
-    method runApp(filePath: string, config: Table[string, string]) =
+    method runApp(output: BuildOutput) =
 
         # Run it with Chrome
         runAndPipeOutput findChromeBinaryPath(),
-            "--app=file://" & filePath,
+            "--app=file://" & output.filePath,
             "--allow-file-access",
             "--allow-file-access-from-files",
             "--window-size=1024,768",
-            "--user-data-dir=" & (config["temp"] / "chromedata"),
+            "--user-data-dir=" & (output.build.config["temp"] / "chromedata"),
             # "--chrome-frame",
             # "--single-process",
             "--disable-renderer-backgrounding",
@@ -83,10 +83,10 @@ class PlatformWeb of Platform:
 
 
     ## Build
-    method build(targetID: string, config: Table[string, string]): BuildOutput =
+    method build(build: BuildConfig): BuildOutput =
 
         # Create staging directory
-        let stagingDir = config["temp"] / "web"
+        let stagingDir = build.config["temp"] / "web"
         if not dirExists(stagingDir):
             createDir(stagingDir)
 
@@ -96,23 +96,23 @@ class PlatformWeb of Platform:
 
             # Crate flags
             "--define:NimCrate",
-            "--define:NimCrateVersion=" & config["version"],
-            "--define:NimCrateTargetID=" & targetID,
+            "--define:NimCrateVersion=" & build.config["version"],
+            "--define:NimCrateTargetID=" & build.targetID,
             "--define:NimCrateWeb",
-            "--define:NimCrateID=" & config["id"],
+            "--define:NimCrateID=" & build.config["id"],
             "--out:" & jsPath,
 
             # Architecture and platform flags
-            if config["debug"] == "": "--define:release" else: "--define:debug",
+            if build.config["debug"] == "": "--define:release" else: "--define:debug",
             
             # Source file path
-            config["sourcefile"]
+            build.config["sourcefile"]
 
         # Read entire JS code
         let jsCode = readFile(jsPath)
 
         # Create wrapper html
-        let appTitle = config.getOrDefault("name", "App")
+        let appTitle = build.config.getOrDefault("name", "App")
         let outputFilePath = stagingDir / "index.html"
         writeFile(outputFilePath, """
             <!DOCTYPE html>
@@ -138,4 +138,4 @@ class PlatformWeb of Platform:
         """.strip())
 
         # Done
-        return BuildOutput(filePath: outputFilePath, fileExtension: "html")
+        return BuildOutput(build: build, filePath: outputFilePath, fileExtension: "html")

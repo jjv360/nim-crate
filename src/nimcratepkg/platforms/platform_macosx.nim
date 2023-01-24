@@ -27,23 +27,31 @@ class PlatformMac of Platform:
 
 
     ## Run the built app on this platform if possible
-    method runApp(filePath: string, config: Table[string, string]) =
+    method runApp(output: BuildOutput) =
 
-        # Run it
-        runAndPipeOutput "open", 
-            "-a", filePath,
-            "-W"                # <-- Wait for app to finish
+        # Check how to run
+        if output.build.cliOptions.hasKey("macNoLS"):
+
+            # Run it directly
+            runAndPipeOutput output.filePath / "Contents" / "MacOS" / "nimApp"
+
+        else:
+
+            # Run it via LaunchServices
+            runAndPipeOutput "open", 
+                "-a", output.filePath,
+                "-W"                        # <-- Wait for app to finish
 
 
     ## Build
-    method build(targetID: string, config: Table[string, string]): BuildOutput =
+    method build(build: BuildConfig): BuildOutput =
 
         # Only supported on MacOS
         when not defined(macosx):
             raiseAssert("Only supported on Mac OS X")
 
         # Create staging directory
-        let stagingDir = config["temp"] / "macosx"
+        let stagingDir = build.config["temp"] / "macosx"
         createDir(stagingDir)
         
         # Compile for x64
@@ -53,9 +61,9 @@ class PlatformMac of Platform:
             # Crate flags
             "--define:NimCrate",
             "--define:NimCrateMacOSX",
-            "--define:NimCrateTargetID=" & targetID,
-            "--define:NimCrateVersion=" & config["version"],
-            "--define:NimCrateID=" & config["id"],
+            "--define:NimCrateTargetID=" & build.targetID,
+            "--define:NimCrateVersion=" & build.config["version"],
+            "--define:NimCrateID=" & build.config["id"],
             "--out:" & stagingDir / "app-amd64",
 
             # Architecture and platform flags
@@ -63,7 +71,7 @@ class PlatformMac of Platform:
             "--cpu:amd64",
             "--app:gui",
             "--threads:on",
-            if config["debug"] == "": "--define:release" else: "--define:debug",
+            if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
             "--passC:-target x86_64-apple-macos10.12",
@@ -73,7 +81,7 @@ class PlatformMac of Platform:
             "--passL:-headerpad_max_install_names",
             
             # Source file path
-            config["sourcefile"]
+            build.config["sourcefile"]
         
         # Compile for arm64 (M1 Macs)
         stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Building app for M1")
@@ -82,9 +90,9 @@ class PlatformMac of Platform:
             # Crate flags
             "--define:NimCrate",
             "--define:NimCrateMacOSX",
-            "--define:NimCrateTargetID=" & targetID,
-            "--define:NimCrateVersion=" & config["version"],
-            "--define:NimCrateID=" & config["id"],
+            "--define:NimCrateTargetID=" & build.targetID,
+            "--define:NimCrateVersion=" & build.config["version"],
+            "--define:NimCrateID=" & build.config["id"],
             "--out:" & stagingDir / "app-arm64",
 
             # Architecture and platform flags
@@ -102,7 +110,7 @@ class PlatformMac of Platform:
             "--passL:-headerpad_max_install_names",
             
             # Source file path
-            config["sourcefile"]
+            build.config["sourcefile"]
 
         # Link binaries into a single universal binary
         run "lipo", "-create", 
@@ -129,10 +137,10 @@ class PlatformMac of Platform:
             "IFMinorVersion": 1,
 
             # App details
-            "CFBundleIdentifier": config["id"],
-            "CFBundleName": config["name"],
-            "CFBundleShortVersionString": config["version"],
-            "CFBundleGetInfoString": config["name"],
+            "CFBundleIdentifier": build.config["id"],
+            "CFBundleName": build.config["name"],
+            "CFBundleShortVersionString": build.config["version"],
+            "CFBundleGetInfoString": build.config["name"],
 
             # Execution details
             "CFBundleExecutable": "nimApp",                     # <-- The name of the binary in the MacOS folder
@@ -144,4 +152,4 @@ class PlatformMac of Platform:
         # TODO: Sign the app
 
         # Done
-        return BuildOutput(filePath: bundlePath, fileExtension: "app")
+        return BuildOutput(build: build, filePath: bundlePath, fileExtension: "app")
