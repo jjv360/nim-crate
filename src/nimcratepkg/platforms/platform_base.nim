@@ -79,3 +79,17 @@ proc runAndPipeOutput*(args: varargs[string]) =
 proc runWithExitCode*(args: varargs[string]): tuple[output: string, exitCode: int] =
     let cmd = args.quoteShellCommand()
     return execCmdEx(cmd, { poStdErrToStdOut })
+
+
+## Utility: Find an EXE in a list of possible paths
+proc findExeInList*(files: seq[string]): string =
+
+    # Go through each path and check if it exists
+    for path in files:
+        if path.len > 0:
+            let expandedPath = expandTilde(path)
+            if fileExists(expandedPath):
+                return path
+
+    # Not found
+    return ""

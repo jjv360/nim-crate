@@ -9,8 +9,16 @@ import std/strformat
 import classes
 import ./platform_base
 
-## CrossOver on Mac (wine) bin location
-const crossOverWine = "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine"
+## Possible locations of Wine
+let winePaths = @[
+
+    # Check the PATH
+    findExe("wine"),
+
+    # CrossOver on Mac
+    "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine",
+
+]
 
 ##
 ## Build for Windows
@@ -29,15 +37,10 @@ class PlatformWindows of Platform:
             # We can run it directly
             return true 
 
-        elif defined(macosx):
+        else:
 
-            # True if CrossOver is installed
-            return fileExists(crossOverWine)
-
-        else: 
-
-            # Unknown platform
-            return false
+            # We can run it with Wine as well
+            return findExeInList(winePaths) != ""
 
 
     ## Run the built app on this platform if possible
@@ -49,17 +52,12 @@ class PlatformWindows of Platform:
             # We can run it directly
             runAndPipeOutput output.filePath
 
-        elif defined(macosx):
+        else:
 
-            # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
-            runAndPipeOutput crossOverWine, 
+            # Run with Wine
+            runAndPipeOutput findExeInList(winePaths), 
                 "--cx-log", "/dev/null",        # <-- Hide Wine's warnings which are quite noisy
                 output.filePath                 # <-- EXE to run
-
-        else: 
-
-            # Unknown platform
-            return false
         
 
     ## Build

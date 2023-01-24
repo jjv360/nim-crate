@@ -4,44 +4,31 @@ import std/strutils
 import classes
 import ./platform_base
 
-## Find the location of the Chrome binary, or return a blank string if not found
-proc findChromeBinaryPath(): string =
+# List of possible locations for the Chrome EXE
+let chromeBinaryLocations = @[
 
-    # Get list of binary locations
-    let chromeBinaryLocations = @[
+    # Common paths on Windows
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", 
+    "C:/Program Files (x86)/Google/Application/chrome.exe", 
+    "~/AppDataLocal/Google/Chrome/chrome.exe",
 
-        # Common paths on Windows
-        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", 
-        "C:/Program Files (x86)/Google/Application/chrome.exe", 
-        "~/AppDataLocal/Google/Chrome/chrome.exe",
+    # Common paths on *nix
+    "/usr/bin/google-chrome", 
+    "/usr/local/sbin/google-chrome", 
+    "/usr/local/bin/google-chrome", 
+    "/usr/sbin/google-chrome", 
+    "/usr/bin/chrome", 
+    "/sbin/google-chrome", 
+    "/bin/google-chrome",
 
-        # Common paths on *nix
-        "/usr/bin/google-chrome", 
-        "/usr/local/sbin/google-chrome", 
-        "/usr/local/bin/google-chrome", 
-        "/usr/sbin/google-chrome", 
-        "/usr/bin/chrome", 
-        "/sbin/google-chrome", 
-        "/bin/google-chrome",
+    # Common paths on MacOS
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "~/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 
-        # Common paths on MacOS
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "~/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    # Check for it on the PATH
+    findExe("chrome"),
 
-        # Check for it on the PATH
-        findExe("chrome"),
-
-    ]
-
-    # Go through each path and check if it exists
-    for path in chromeBinaryLocations:
-        if path.len > 0:
-            let expandedPath = expandTilde(path)
-            if fileExists(expandedPath):
-                return path
-
-    # Not found
-    return ""
+]
 
 ##
 ## Build for Web
@@ -55,15 +42,14 @@ class PlatformWeb of Platform:
     method canRunApp(): bool = 
         
         # Find Chrome EXE
-        let chromeExe = findChromeBinaryPath()
-        return chromeExe != ""
+        return findExeInList(chromeBinaryLocations) != ""
 
 
     ## Run the built app on this platform if possible
     method runApp(output: BuildOutput) =
 
         # Run it with Chrome
-        runAndPipeOutput findChromeBinaryPath(),
+        runAndPipeOutput findExeInList(chromeBinaryLocations),
             "--app=file://" & output.filePath,
             "--allow-file-access",
             "--allow-file-access-from-files",
