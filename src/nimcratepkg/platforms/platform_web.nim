@@ -70,7 +70,13 @@ class PlatformWeb of Platform:
             "--window-size=1024,768",
             "--user-data-dir=" & (config["temp"] / "chromedata"),
             # "--chrome-frame",
-            # "--single-process"
+            # "--single-process",
+            "--disable-renderer-backgrounding",
+            "--disable-background-networking",
+            "--disable-extensions",     # <-- Extensions may prevent the process from exiting when the window is closed
+            "--disable-component-extensions-with-background-pages",
+            "--disable-features=Translate",
+            "--disable-backgrounding-occluded-windows",
             "--enable-logging=stderr",
             "--disable-breakpad",
             "--no-first-run"

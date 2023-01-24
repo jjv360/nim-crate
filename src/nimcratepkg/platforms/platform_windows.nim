@@ -39,6 +39,14 @@ class PlatformWindows of Platform:
     ## Build
     method build(targetID: string, config: Table[string, string]): BuildOutput =
 
+        # Get binary names
+        when defined(windows):
+            const mingw = false
+            const windres = "windres"
+        else:
+            const mingw = true
+            const windres = "x86_64-w64-mingw32-windres"
+
         # Create staging directory
         let stagingDir = config["temp"] / "windows"
         if not dirExists(stagingDir):
@@ -82,12 +90,12 @@ class PlatformWindows of Platform:
         let resourcePath = stagingDir / "app.rc"
         writeFile(resourcePath, fmt"""
             #include <windows.h>
-            CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "{manifestPath}"
+            CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "{manifestPath.replace("\\", "\\\\")}"
         """.strip())
 
         # Compile the resource file
         let resourceCompiledPath = stagingDir / "app.res"
-        run "x86_64-w64-mingw32-windres", 
+        run windres, 
             resourcePath,               # Input file
             "-O", "coff",               # Output COFF format - thanks https://stackoverflow.com/a/67040061/1008736
             "-o", resourceCompiledPath  # Output file
@@ -111,11 +119,13 @@ class PlatformWindows of Platform:
             "--threads:on",
             "--define:release",
 
-            # MinGW flags
-            "--define:mingw",
-            "--gcc.exe:x86_64-w64-mingw32-gcc",
-            "--gcc.linkerexe:x86_64-w64-mingw32-gcc",
+            # Windows flags
             "--passL:" & resourceCompiledPath,              # <-- Include our compiled resource file
+
+            # MinGW flags
+            if mingw: "--define:mingw" else: "-d:1",
+            if mingw: "--gcc.exe:x86_64-w64-mingw32-gcc" else: "-d:1",
+            if mingw: "--gcc.linkerexe:x86_64-w64-mingw32-gcc" else: "-d:1",
             
             # Source file path
             config["sourcefile"]
