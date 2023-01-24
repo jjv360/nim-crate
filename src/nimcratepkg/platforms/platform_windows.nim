@@ -52,7 +52,9 @@ class PlatformWindows of Platform:
         elif defined(macosx):
 
             # We can try using LaunchServices on the EXE, maybe they have CrossOver installed?
-            runAndPipeOutput crossOverWine, output.filePath
+            runAndPipeOutput crossOverWine, 
+                "--cx-log", "/dev/null",        # <-- Hide Wine's warnings which are quite noisy
+                output.filePath                 # <-- EXE to run
 
         else: 
 
