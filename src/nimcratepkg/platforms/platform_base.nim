@@ -29,6 +29,12 @@ class Platform:
     method build(targetID: string, config: Table[string, string]): BuildOutput =
         raiseAssert("Build for this platform is not supported.")
 
+    ## Return true if we can run on this platform
+    method canRunApp(): bool = false
+
+    ## Run the built app on this platform if possible
+    method runApp(filePath: string, config: Table[string, string]) = discard
+
 
 ## Utility: Run a command and return the text output, and fail if the exit code is not zero
 proc run*(args: varargs[string]) =
@@ -42,6 +48,12 @@ proc run*(args: varargs[string]) =
         echo "Command: " & cmd
         echo result.output
         raiseAssert("Command failed.")
+
+
+## Utility: Run a command and pipe output to the console
+proc runAndPipeOutput*(args: varargs[string]) =
+    let cmd = args.quoteShellCommand()
+    discard execCmd(cmd)
 
 
 

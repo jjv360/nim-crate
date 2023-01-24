@@ -17,7 +17,7 @@ Flag                    | Description
 `--target:xxx`          | Build the specified target only. By default all targets are built.
 `--debug`               | If specified, builds all targets in debug mode. This overrides the `debug` target option.
 `--outDir:xxx`          | Specify the output directory for all builds. The default is `"dist"`.
-`--run`                 | If specified, will build and run the app on the current platform. Overrides `--target` to use the current platform's target.
+`--run`                 | If specified, will run the app after building.
 
 
 ## Crate configuration

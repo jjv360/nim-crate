@@ -8,32 +8,16 @@ import ./platform_base
 
 
 ##
-## Build a Mac OS X application
-## See: https://forum.nim-lang.org/t/8129
-## See: https://stackoverflow.com/a/3251285/1008736
-## See: https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-class PlatformMac of Platform:
+## Build an iOS application
+## See: https://developer.apple.com/documentation/xcode/creating-a-multi-platform-binary-framework-bundle
+## See: https://thisisyuu.github.io/2020/MISC-Building-universal-binaries-from-C-library-for-an-iOS-project/
+## See: https://stackoverflow.com/a/23543343/1008736
+## See: https://stackoverflow.com/questions/41007556 (sysroot)
+class PlatformiOS of Platform:
 
     ## Platform info
-    method id(): string = "macosx"
-    method name(): string = "Mac OS X"
-
-    ## Return true if we can run on this platform
-    method canRunApp(): bool = 
-        when defined(macosx): 
-            return true 
-        else: 
-            return false
-
-
-    ## Run the built app on this platform if possible
-    method runApp(filePath: string, config: Table[string, string]) =
-
-        # Run it
-        runAndPipeOutput "open", 
-            "-a", filePath,
-            "-W"                # <-- Wait for app to finish
-
+    method id(): string = "ios"
+    method name(): string = "iOS"
 
     ## Build
     method build(targetID: string, config: Table[string, string]): BuildOutput =
@@ -43,58 +27,62 @@ class PlatformMac of Platform:
             raiseAssert("Only supported on Mac OS X")
 
         # Create staging directory
-        let stagingDir = config["temp"] / "macosx"
+        let stagingDir = config["temp"] / "ios"
         createDir(stagingDir)
         
         # Compile for x64
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for Intel")
+        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for x86_64 (Simulator)")
         run "nim", "compile",
 
             # Crate flags
             "--define:NimCrate",
-            "--define:NimCrateMacOSX",
+            "--define:NimCrateiOS",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
             "--out:" & stagingDir / "app-amd64",
 
             # Architecture and platform flags
-            "--os:macosx",
+            "--os:ios",
             "--cpu:amd64",
             "--app:gui",
             "--threads:on",
+            "--define:ios",
             "--define:release",
 
             # Compiler flags
-            "--passC:-target x86_64-apple-macos10.12",
-            "--passL:-target x86_64-apple-macos10.12",
+            "--passC:-target x86_64-apple-ios-simulator",
+            "--passL:-target x86_64-apple-ios-simulator",
+            "--passC:-mios-simulator-version-min=13.0",
+            "--passL:-mios-simulator-version-min=13.0",
             "--passC:-fembed-bitcode",
             "--passL:-fembed-bitcode",
-            "--passL:-headerpad_max_install_names",
+            # "--passL:-headerpad_max_install_names",
             
             # Source file path
             config["sourcefile"]
         
         # Compile for arm64 (M1 Macs)
-        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for M1")
+        stdout.styledWriteLine(fgBlue, "  > ", fgDefault, "Building app for ARM64")
         run "nim", "compile",
 
             # Crate flags
             "--define:NimCrate",
-            "--define:NimCrateMacOSX",
+            "--define:NimCrateiOS",
             "--define:NimCrateTargetID=" & targetID,
             "--define:NimCrateVersion=" & config["version"],
             "--out:" & stagingDir / "app-arm64",
 
             # Architecture and platform flags
-            "--os:macosx",
+            "--os:ios",
             "--cpu:arm64",
             "--app:gui",
             "--threads:on",
+            "--define:ios",
             "--define:release",
 
             # Compiler flags
-            "--passC:-target arm64-apple-macos11",
-            "--passL:-target arm64-apple-macos11",
+            "--passC:-target arm64-apple-ios",
+            "--passL:-target arm64-apple-ios",
             "--passC:-fembed-bitcode",
             "--passL:-fembed-bitcode",
             "--passL:-headerpad_max_install_names",

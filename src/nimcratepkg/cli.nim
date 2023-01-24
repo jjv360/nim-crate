@@ -11,12 +11,15 @@ import ./platforms/platform_base
 import ./platforms/platform_windows
 import ./platforms/platform_web
 import ./platforms/platform_macosx
+import ./platforms/platform_ios
 
 # Create list of active platforms
+# Note: The order is imoprtant, since it will be used to determine which binary to run if --run is specified
 let platforms = @[
     PlatformMac.init(),
-    PlatformWeb.init(),
     PlatformWindows.init(),
+    PlatformiOS.init(),
+    PlatformWeb.init(),
 ]
 
 
@@ -149,15 +152,26 @@ proc run2() =
     # Add extra config options
     config["temp"] = tempFolder
 
-    # If no targets specified, add all of the known ones
+    # If no targets specified and --run is specified, build for the current platform
+    if targets.len == 0 and options.hasKey("run"):
+        when defined(macosx):
+            targets.add("macosx")
+        elif defined(windows):
+            targets.add("windows")
+        else:
+            targets.add("web")      # <-- Fallback to Web if unknown platform ... we can try run it with Chrome
+
+    # If no targets specified, add all of the known platforms as targets
     if targets.len == 0:
-        targets = @["windows", "macosx", "linux", "web"]
+        for p in platforms:
+            targets.add(p.id)
 
     # If they specified a specific target on the command line, build that one only
     if options.getOrDefault("target", "") != "":
         targets = @[ options["target"] ]
 
     # Build all platforms
+    var didRun = false
     for targetID in targets:
 
         # Start building this target
@@ -182,26 +196,46 @@ proc run2() =
             # Stop if not found
             if platform == nil:
                 raiseAssert("Platform '" & platformID & "' not supported.")
+
+            # If --run is specified, only build if we can run on this platform
+            if options.hasKey("run") and not platform.canRunApp():
+                continue
             
             # Build and get output
             let buildInfo = platform.build(targetID, config)
 
             # Get output file name
-            var outName = targetID.replace(re"[^0-9a-zA-Z]", "-")
-            if buildInfo.fileExtension != "":
-                outName = outName & "." & buildInfo.fileExtension
+            var outName = (config["name"] & " (" & targetID & ")").replace(re"[:;'*?]", "-")
+            if buildInfo.fileExtension != "": outName = outName & "." & buildInfo.fileExtension
+            let outPath = config["outDir"] / outName
+
+            # Remove existing files
+            createDir(config["outDir"])
+            if dirExists(outPath): removeDir(outPath)
+            if fileExists(outPath): removeFile(outPath)
 
             # Move to output directory
-            createDir(config["outDir"])
             if dirExists(buildInfo.filePath):
-                moveDir(buildInfo.filePath, config["outDir"] / outName)
+                moveDir(buildInfo.filePath, outPath)
             else:
-                moveFile(buildInfo.filePath, config["outDir"] / outName)
+                moveFile(buildInfo.filePath, outPath)
+
+            # If --run is specified, run the app
+            if options.hasKey("run"):
+                stdout.styledWriteLine(fgBlue, "> ", fgDefault, "Launching app...")
+                didRun = true
+                platform.runApp(outPath, config)
+                break
 
         except Exception as err:
 
             # Build failed
             stdout.styledWriteLine(fgRed, "  x ", fgDefault, "Build failed: ", err.msg)
+
+    # Show warning if no platform to run was built
+    if options.hasKey("run") and not didRun:
+        stdout.styledWriteLine(fgYellow, "  ! ", fgDefault, "Unable to run app on this platform")
+        quit(2)
 
 
 # Entry point with error handling

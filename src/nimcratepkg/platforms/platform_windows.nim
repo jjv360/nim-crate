@@ -18,6 +18,24 @@ class PlatformWindows of Platform:
     method id(): string = "windows"
     method name(): string = "Windows"
 
+    ## Return true if we can run on this platform
+    method canRunApp(): bool = 
+        
+        # Only on Windows
+        # TODO: Use Wine or CrossOver?
+        when defined(windows): 
+            return true 
+        else: 
+            return false
+
+
+    ## Run the built app on this platform if possible
+    method runApp(filePath: string, config: Table[string, string]) =
+
+        # Run it
+        runAndPipeOutput filePath
+
+
     ## Build
     method build(targetID: string, config: Table[string, string]): BuildOutput =
 
