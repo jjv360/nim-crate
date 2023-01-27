@@ -62,6 +62,7 @@ class PlatformMac of Platform:
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
+            "--mm:orc",
             "--passC:-target x86_64-apple-macos10.12",
             "--passL:-target x86_64-apple-macos10.12",
             "--passC:-fembed-bitcode",
@@ -91,6 +92,7 @@ class PlatformMac of Platform:
             "--define:release",
 
             # Compiler flags
+            "--mm:orc",
             "--passC:-target arm64-apple-macos11",
             "--passL:-target arm64-apple-macos11",
             "--passC:-fembed-bitcode",

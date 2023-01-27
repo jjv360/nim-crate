@@ -144,7 +144,8 @@ class PlatformWindows of Platform:
             "--threads:on",
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
-            # Windows flags
+            # Compiler flags
+            "--mm:orc",
             "--passL:" & resourceCompiledPath,              # <-- Include our compiled resource file
 
             # MinGW flags

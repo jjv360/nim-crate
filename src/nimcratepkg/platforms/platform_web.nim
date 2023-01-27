@@ -89,6 +89,7 @@ class PlatformWeb of Platform:
             "--out:" & jsPath,
 
             # Architecture and platform flags
+            "--mm:orc",
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
             
             # Source file path

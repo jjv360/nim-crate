@@ -82,6 +82,7 @@ class PlatformiOS of Platform:
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
+            "--mm:orc",
             "--passC:-target arm64-apple-ios",
             "--passL:-target arm64-apple-ios",
             "--passC:-fembed-bitcode",
