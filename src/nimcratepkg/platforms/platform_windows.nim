@@ -141,10 +141,10 @@ class PlatformWindows of Platform:
             "--cpu:amd64",
             "--os:windows",
             "--app:" & build.config.getOrDefault("mode", "gui"),
-            "--threads:on",
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
+            "--threads:on",
             "--mm:orc",
             "--passL:" & resourceCompiledPath,              # <-- Include our compiled resource file
 

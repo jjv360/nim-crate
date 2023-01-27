@@ -58,10 +58,10 @@ class PlatformMac of Platform:
             "--os:macosx",
             "--cpu:amd64",
             "--app:gui",
-            "--threads:on",
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
+            "--threads:on",
             "--mm:orc",
             "--passC:-target x86_64-apple-macos10.12",
             "--passL:-target x86_64-apple-macos10.12",

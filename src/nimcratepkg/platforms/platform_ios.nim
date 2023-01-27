@@ -77,11 +77,11 @@ class PlatformiOS of Platform:
             "--os:ios",
             "--cpu:arm64",
             "--app:gui",
-            "--threads:on",
             "--define:ios",
             if build.config["debug"] == "": "--define:release" else: "--define:debug",
 
             # Compiler flags
+            "--threads:on",
             "--mm:orc",
             "--passC:-target arm64-apple-ios",
             "--passL:-target arm64-apple-ios",
