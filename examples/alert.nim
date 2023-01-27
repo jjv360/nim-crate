@@ -4,6 +4,11 @@ crate:
     name = "Alert Example"
     description = "This app shows an alert box and then exits. To build: `nimcrate examples/alert.nim`"
 
+    # Supported platforms
+    target "windows"
+    target "macosx"
+    target "web"
+
 
 # Check how to show
 import std/strformat

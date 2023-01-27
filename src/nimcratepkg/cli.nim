@@ -186,7 +186,8 @@ proc run2() =
     config["temp"] = tempFolder
 
     # If no targets specified and --run is specified, build for the current platform
-    if targets.len == 0 and options.hasKey("run"):
+    if options.getOrDefault("target", "") == "" and options.hasKey("run"):
+        targets = @[]
         when defined(macosx):
             targets.add("macosx")
         elif defined(windows):
