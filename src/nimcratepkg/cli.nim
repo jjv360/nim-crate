@@ -106,9 +106,16 @@ proc run2() =
     if filename.len == 0: raiseAssert("No input file specified.")
     if filename.len > 0 and not fileExists(filename): raiseAssert("File not found: " & filename)
 
+    # Create a temporary directory for building the app, and delete it on exit
+    let tempFolder = createTempDir("nimcrate", "build")
+    addExitProc(proc() =
+        removeDir(tempFolder)
+    )
+
     # Fetch crate information from the source file
     if not options.contains("outputConfig"): stdout.styledWriteLine(fgBlue, "> ", resetStyle, "Fetching crate information...")
-    let result = runWithExitCode("nim", "r", "--define:NimCrateInformationExport", absolutePath(filename))
+    let outputFile = tempFolder / "throwaway.bin"
+    let result = runWithExitCode("nim", "compile", "--define:NimCrateInformationExport", "--out:" & outputFile, absolutePath(filename))
     var targets: seq[string]
     var config: Table[string, string]
     var currentTarget = ""
@@ -152,6 +159,7 @@ proc run2() =
     config["outDir"] = outDir
     config["sourcefile"] = absolutePath(filename)
     config["debug"] = options.getOrDefault("debug")
+    config["temp"] = tempFolder
 
     # If no ID specified, use the input file name
     if config.getOrDefault("id", "") == "":
@@ -175,15 +183,6 @@ proc run2() =
     if options.contains("outputConfig"):
         for key, value in config.pairs: echo key & "=" & value
         quit(0)
-
-    # Create a temporary directory for building the app, and delete it on exit
-    let tempFolder = createTempDir("nimcrate", "build")
-    addExitProc(proc() =
-        removeDir(tempFolder)
-    )
-    
-    # Add extra config options
-    config["temp"] = tempFolder
 
     # If no targets specified and --run is specified, build for the current platform
     if options.getOrDefault("target", "") == "" and options.hasKey("run"):
