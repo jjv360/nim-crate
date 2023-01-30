@@ -2,6 +2,15 @@ import classes
 import std/tables
 import std/os
 import std/osproc
+import std/terminal
+
+
+##
+## CLI options passed to the compiler
+singleton CLIContext:
+
+    ## CLI launch flags
+    var cliOptions: Table[string, string]
 
 
 ##
@@ -56,15 +65,29 @@ class Platform:
 ## Utility: Run a command and return the text output, and fail if the exit code is not zero
 proc run*(args: varargs[string]) =
 
-    # Run command
-    let cmd = args.quoteShellCommand()
-    let result = execCmdEx(cmd, { poStdErrToStdOut })
+    # Check if in verbose mode
+    if CLIContext.shared.cliOptions.hasKey("verbose"):
 
-    # Check if failed
-    if result.exitCode != 0:
-        echo "Command: " & cmd
-        echo result.output
-        raiseAssert("Command failed.")
+        # Run command and pipe output
+        let cmd = args.quoteShellCommand()
+        stdout.styledWriteLine(fgBlue, "  > ", resetStyle, "Running command: " & cmd)
+        let exitCode = execCmd(cmd)
+
+        # Check if failed
+        if exitCode != 0:
+            raiseAssert("Command failed.")
+
+    else:
+
+        # Run command
+        let cmd = args.quoteShellCommand()
+        let result = execCmdEx(cmd, { poStdErrToStdOut })
+
+        # Check if failed
+        if result.exitCode != 0:
+            echo "Command: " & cmd
+            echo result.output
+            raiseAssert("Command failed.")
 
 
 ## Utility: Run a command and pipe output to the console

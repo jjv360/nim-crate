@@ -96,6 +96,9 @@ proc run2() =
                 else:
                     raiseAssert("Only one source file should be specified.")
 
+    # Store options
+    CLIContext.shared.cliOptions = options
+
     # Show help if parameters are invalid
     if options.hasKey("help"):
         echo helpText

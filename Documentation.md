@@ -18,6 +18,7 @@ Flag                    | Description
 `--debug`               | If specified, builds all targets in debug mode. This overrides the `debug` target option.
 `--outDir:xxx`          | Specify the output directory for all builds. The default is `"dist"`.
 `--run`                 | If specified, will run the app after building.
+`--verbose`             | Outputs everything while compiling.
 
 
 ## Crate configuration
